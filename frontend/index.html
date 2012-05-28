@@ -1,0 +1,70 @@
+<html>
+  <head>
+    <script type="text/javascript" src="jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" src="underscore.js"></script>
+    <script type="text/javascript" src="backbone.js"></script>
+    <script type="text/javascript"  src="require.js"></script>
+    <script type="text/javascript">
+        require(['player','player_view'], function(Player, PlayerView) {
+            var Game = Backbone.Model.extend({
+              });
+          var PlayerBase = Backbone.Collection.extend({
+              model: Player
+          });
+          var AppRouter = Backbone.Router.extend({
+            routes: {
+              "games/:game/": "game",
+              "games/:game/players": "players"
+            },
+            game: function(game) {
+              currentGame = new Game;
+              currentGame.url = 'http://'+document.location.hostname+':3000/games/'+game
+              currentGame.fetch()
+            },
+            players: function(game) {
+              playerList.url = 'http://'+document.location.hostname+':3000/games/'+game+'/players'
+              playerList.fetch();
+            }
+          });
+
+          var playerList = new PlayerBase;
+          var currentGame = new Game;
+
+          var AppView = Backbone.View.extend({
+            initialize: function() {
+              this.players = playerList;
+              playerList.bind('add', this.addOne, this);
+              playerList.bind('reset', this.reset, this);
+            },
+            addOne: function(player) {
+              var view = new PlayerView({model: player})
+              this.$("#player-list").append(view.render().el);
+            },
+            reset: function() {
+              $("#player-list").html('');
+              playerList.each(this.addOne);
+            }
+          });
+        $(function() {
+          window.app = new AppView;
+          var theRouter = new AppRouter;
+          Backbone.history.start();
+        });
+      });
+    </script>
+  </head>
+  <body>
+    Hi. <a href="#games/Spring 2011/players">Spring 2011</a> | <a href="#games/Fall 2011/players">Fall 2011</a> | <a href="#games/Spring 2012/players">Spring 2012</a><br />
+    Please wait 6 seconds after clicking.
+    <br />
+
+    <div id="player-list">
+    </div>
+    <script type="text/template" id="player-template">
+      <b>Player: <%= name %></b> (<%= caseid %>)<br />
+      <b>Events:</b>
+      <ul><% _.each(_.sortBy(events, function(ev) { return Date.parse(ev.datetime); }), function(ev) { %><li><%= ev._type %><br><%= ev.datetime %></li> <% }); %></ul>
+    </script>
+  </body>
+</html>
+
